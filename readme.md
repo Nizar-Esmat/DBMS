@@ -1,0 +1,142 @@
+# DBMS Bash Script Documentation
+
+## Overview
+This document describes a Database Management System (DBMS) built using Bash scripting. The system allows users to manage databases and tables through a set of interactive menus.
+
+-----------------------------------------------------
+
+## Key Notes:
+1. **Paths**:  
+   - All file paths are relative; no absolute paths are used.  
+
+2. **Databases**:  
+   - Represented as directories.  
+
+3. **Tables**:  
+   - Represented by two files:
+     - `metadata` file: Defines the table structure (field names, data types, primary key).  
+     - `data` file: Stores actual table records.  
+
+4. **PS3 Variable**:  
+   - Used for interactive `select` menus to customize the prompt string.  
+
+5. **Primary Key**:  
+   - Can be auto-incremented or manually assigned.  
+   - Enforces uniqueness.  
+
+6. **Column Separator**:  
+   - A specific delimiter (e.g., `|`) is used to separate columns in the data file.  
+
+-----------------------------------------------------
+
+## Main Script (main_script.sh)
+
+### Description:
+The main script is responsible for managing databases and providing options to connect to specific databases. It includes operations such as creating, deleting, and listing databases.
+
+### Features:
+1. **Create Database**  
+   - Takes input from the user for the database name.  
+   - Validates the name and checks for duplicates.  
+   - Creates a directory to represent the database.  
+
+2. **List Databases**  
+   - Lists all existing databases (directories) using relative paths.  
+
+3. **Delete Database**  
+   - Validates the database name provided by the user.  
+   - Deletes the database directory if it exists.  
+
+4. **Connect to Database**  
+   - Connects to a specified database if it exists.  
+   - Calls the database script (`db_script.sh`) to manage tables.  
+
+-----------------------------------------------------
+
+## Database Script (db_script.sh)
+
+### Description:
+The database script provides operations for managing tables within a connected database. Tables consist of two files: metadata (structure) and data (records).
+
+### Features:
+1. **Create Table**  
+   - Takes input for table name and validates it.  
+   - Collects field names, data types (string or integer), and sets a primary key.  
+   - Creates metadata and data files for the table.  
+
+2. **List Tables**  
+   - Displays all existing tables in the database.  
+
+3. **Insert into Table**  
+   - Reads metadata to validate data input.  
+   - Ensures primary key uniqueness.  
+   - Inserts the record into the table's data file.  
+
+4. **Select from Table**  
+   - Provides options to:
+     - Display all data.
+     - Select specific rows using conditions (e.g., equal, >, <).
+     - Project specific columns.  
+
+5. **Delete from Table**  
+   - Allows deletion of rows based on the primary key or conditions.  
+   - Option to clear all data without deleting the table.  
+
+6. **Update Table**  
+   - Updates specific rows or all data within a column.  
+   - Validates input data against the field types.  
+
+7. **Delete Table**  
+   - Deletes the table's metadata and data files after validation.  
+
+-----------------------------------------------------
+
+## Validation Script (validation.sh)
+
+### Description:
+This script contains reusable functions to validate user inputs for names, data types, and conditions.
+
+### Features:
+1. **Name Validation**  
+   - Ensures database and table names are alphanumeric and do not contain spaces or special characters.  
+
+2. **Data Type Validation**  
+   - Ensures values match their specified data types (e.g., integers or strings).  
+
+3. **Primary Key Validation**  
+   - Ensures uniqueness for the primary key during data insertion.  
+
+-----------------------------------------------------
+
+## Menu Structure:
+
+### Main Menu (main_script.sh)
+1. Create Database  
+2. List Databases  
+3. Delete Database  
+4. Connect to Database  
+5. Exit  
+
+### Database Menu (db_script.sh)
+1. Create Table  
+2. List Tables  
+3. Insert into Table  
+4. Select from Table  
+5. Delete from Table  
+6. Update Table  
+7. Delete Table  
+8. Exit  
+
+-----------------------------------------------------
+
+## General Workflow:
+1. Run the main script (`main_script.sh`).  
+2. Choose a database operation (create, delete, or connect).  
+3. If connected to a database, the database script (`db_script.sh`) provides table management options.  
+4. Input is validated using `validation.sh`.  
+
+-----------------------------------------------------
+
+## Conclusion:
+This DBMS system provides basic database and table management functionality using Bash scripting. It ensures proper validation, structure, and organization for managing simple data in a Linux environment.
+
