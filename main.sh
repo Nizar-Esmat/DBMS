@@ -1,5 +1,11 @@
 #! /usr/bin/bash 
 
+function validate_name(){
+
+
+}
+
+
 
 # This function deletes a Database from the DBMS
 function drop_DB(){
@@ -42,7 +48,7 @@ function drop_DB(){
 
 
 # This function connects the user to a Database in the DBMS
-function connect_DB(){
+function connect_to_DB(){
 	#first, prompt the user to enter the database name (directory)
 	read -p "Please enter DB name you want to DROP" DB_name
 	
@@ -63,4 +69,11 @@ function connect_DB(){
 
 
 
+#function to rename an existing Database
+function rename_DB() {
+	
+	#TO IMPLEMENT ---> Tarek
 
+
+
+}

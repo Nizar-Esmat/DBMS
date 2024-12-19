@@ -1,10 +1,44 @@
 #! /usr/bin/bash
 
 
+function validate_name(){
+
+	#To implement --->
+}
+
 
 #function to create a table(file) in the database(directory)
 function create_table(){
-	
+	#check if the file already exists 
+	if [ -f $1 ]
+	then 
+		echo "Table ($1) already exists"
+	else 
+		#if the no table with the entered name exists then check the constrains on the name 
+		if [ validate_name $1 ]
+		then 
+			# if the entered name is valid ---> make a file meta_data to store the columns names and its constrains
+			# prompt the user for the number of columns
+			read -p "Enter the number of columns" column_numbers
+			for ((i=0;i<$column_numbers;i++))
+			do
+				read -p "Enter column name: " column_name
+				
+			
+			done
+		else
+			echo "You entered an invalid name \n Table name should not contain ######"
+		
+		
+			
+	#TO IMPLEMENT ---> Tarek
+
+
+
+}
+
+#function to rename an existing table in the DB
+function rename_table() {
 	#TO IMPLEMENT ---> Tarek
 
 
