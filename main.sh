@@ -1,6 +1,6 @@
 #! /usr/bin/bash 
 
-
+clear
 #function to validate the input 
 function validate_name() {
     local name=$1
@@ -23,7 +23,7 @@ function validate_name() {
 
 
 #function to create data base
-clear
+
 function create_DB(){
     read -p "Enter the name of the database: " DB_name
 
@@ -44,10 +44,8 @@ function create_DB(){
 
 #function to rename an existing Database
 function rename_DB() {
-	
+	echo "rename_DB"
 	#TO IMPLEMENT ---> Tarek
-
-
 
 }
 
@@ -120,9 +118,9 @@ function connect_to_DB(){
 		return 0
 	#if there is no database with the entered file
 	else 
-	then 
 		echo "No Database with name ($DB_name) existing"
 		return 1
+    fi
 }
 
 
@@ -134,10 +132,10 @@ select option in "Create Database" "List Databases" "Delete Database" "Connect t
 do
     case $option in
         "Create Database")
-            createDB
+            create_DB
             ;;
         "List Databases")
-            listDB
+            list_DB
             ;;
         "Delete Database")
             drop_DB
