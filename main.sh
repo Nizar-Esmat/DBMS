@@ -4,6 +4,7 @@ clear
 function createDB(){
     read -p "Enter the name of the database: " dbName
 
+
     validateName $dbName
     validation_result=$?
     if (($validation_result)); then 
