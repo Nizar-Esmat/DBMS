@@ -1,5 +1,6 @@
 #!/bin/bash 
 #function to create data base
+clear
 function createDB(){
     read -p "Enter the name of the database: " dbName
 
