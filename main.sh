@@ -27,7 +27,7 @@ function validate_name() {
 function create_DB(){
     read -p "Enter the name of the database: " DB_name
 
-    validateName $DB_name
+    validate_name $DB_name
     validation_result=$?
     if (($validation_result)); then 
         if [[ ! -d "$DB_name" ]]; then 
@@ -106,7 +106,7 @@ function drop_DB(){
 # This function connects the user to a Database in the DBMS
 function connect_to_DB(){
 	#first, prompt the user to enter the database name (directory)
-	read -p "Please enter DB name you want to DROP" DB_name
+	read -p "Please enter DB name you want to Enter " DB_name
 	
 	# Validate that the database name exists in the DBMS
 	if [ -d  $DB_name ]
@@ -114,7 +114,7 @@ function connect_to_DB(){
 		cd $DB_name
 		echo "You are now in the ($DB_name) Database"
 		#calling script  "db_script.sh" to manage tables.
-		. ./db_script.sh
+		.././db_script.sh
 		return 0
 	#if there is no database with the entered file
 	else 
