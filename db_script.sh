@@ -7,31 +7,31 @@
 # }
 
 
-# # #function to create a table(file) in the database(directory)
-# # function create_table(){
-# # 	#check if the file already exists 
-# # 	if [ -f $1 ]
-# # 	then 
-# # 		echo "Table ($1) already exists"
-# # 	else 
-# # 		#if the no table with the entered name exists then check the constrains on the name 
-# # 		if [ validate_name $1 ]
-# # 		then 
-# # 			# if the entered name is valid ---> make a file meta_data to store the columns names and its constrains
-# # 			# prompt the user for the number of columns
-# # 			read -p "Enter the number of columns" column_numbers
-# # 			for ((i=0;i<$column_numbers;i++))
-# # 			do
-# # 				read -p "Enter column name: " column_name
+# #function to create a table(file) in the database(directory)
+# function create_table(){
+# 	#check if the file already exists 
+# 	if [ -f $1 ]
+# 	then 
+# 		echo "Table ($1) already exists"
+# 	else 
+# 		#if the no table with the entered name exists then check the constrains on the name 
+# 		if [ validate_name $1 ]
+# 		then 
+# 			# if the entered name is valid ---> make a file meta_data to store the columns names and its constrains
+# 			# prompt the user for the number of columns
+# 			read -p "Enter the number of columns" column_numbers
+# 			for ((i=0;i<$column_numbers;i++))
+# 			do
+# 				read -p "Enter column name: " column_name
 				
 			
-# # 			done
-# # 		else
-# # 			echo "You entered an invalid name \n Table name should not contain ######"
+# 			done
+# 		else
+# 			echo "You entered an invalid name \n Table name should not contain ######"
 		
-# # 		fi
+# 		fi
 			
-# # 	#TO IMPLEMENT ---> Tarek
+# 	#TO IMPLEMENT ---> Tarek
 
 
 #function to list table names in a database
@@ -63,10 +63,9 @@ function list_tables(){
 
 #function to add records to a table
 function insert_into(){
-	#TO IMPLEMENT ---> Nizar
-	echo "insert_into"
-	echo "you enter table $1"
+
 	if [ -f "$1" ]; then
+					echo "you enter table $1"
 						name=()
 						type=()
 						pk=""
@@ -152,13 +151,22 @@ done
 
 # }
 
-# #function to delete the whole table including its structure
-# function drop_table(){
-# 	echo "drop_table"
-# 	#TO IMPLEMENT --->  Nizar
-	
-	
-# }
+#function to delete the whole table including its structure
+function drop_table() {
+    echo "drop_table"
+    # TO IMPLEMENT ---> Nizar
+    local table_name=$1
+
+    # Check if the file (table) exists
+    if [ -f "$table_name" ]; then
+        # Use rm -f to avoid errors if the file doesn't exist
+        rm -f ./"$table_name"
+		  rm -f ./"$table_name.meta"
+        echo "Table '$table_name' has been deleted."
+    else
+        echo "Table '$table_name' does not exist."
+    fi
+}
 
 # #function to delete the table data but keep the structure
 # function truncate_table(){
@@ -168,13 +176,92 @@ done
 	
 # }
 
-# #function to delete records from a table
-# function delete_from_table(){
-# 	echo "delete_from_table"
-# 	#TO IMPLEMENT ---> Nizar
+#function to delete records from a table
+
+#1. check that the table is ixest
+#2. check that the clolum of condtions the ixsect
+#3. if the raguments =1 make the data file empty
+ #else if raguments=3 chekc that the $2 == "where" and the $3 data is in the data file then delete this line
+
+function delete_from_table(){
+	# table_name where condtion
+	table_name=$1
+	
+
+	if [ -f $1 ];then
+	if [ -s $1 ];then
+	 
+		if [[ $# -eq 3 ]]; 
+			then
+				echo "you enter 3 arguments"
+				condtion=$2
+				check=$3
+				check_name=$(echo "$check" | awk -F= '{print $1}')
+				check_data=$(echo "$check" | awk -F= '{print $2}')
+				if [[ $condtion =~ [[:space:]]*[Ww][Hh][Ee][Rr][Ee][[:space:]]* ]]; then
+						valid_culmn=$(awk -F: -v  check_name="$check_name"  '
+						 {
+						 
+						 	if (check_name == $2)
+							{
+								print NR
+								exit;
+							}
+						 }
+
+						 ' ./meta)
+
+					if [[ -n $valid_culmn ]];
+					then
+							lines_to_remove=$(awk -F'|' -v valid_culmn="$valid_culmn" -v check_data="$check_data" '
+								  BEGIN {
+								   lines=""
+								    }
+									{
+									 if ($valid_culmn == check_data) {
+									 stNR= NR ""
+										 lines=lines""stNR
+										}
+
+									}
+									END {
+										print lines
+										}
+											' ./data)
+
+								for (( line=${#lines_to_remove}; line>0; line-- )); do
+   							 echo "Removing line $line"
+  							  sed -i "${line}d" ./data
+								done
 
 
-# }
+					else
+						echo "Column not found out side"
+					fi
+
+					else
+    					echo "Enter a correct condition"
+				fi
+
+		elif [[ $# -eq 2  ]];
+			then 
+				echo "you did not enter the condtion"
+		else
+				echo "you enter one arguments will remoev all data from the table"
+				sed -i  'd' $1
+				
+
+	
+		fi
+
+			else
+				echo "your file is empty"
+			fi
+	else
+		echo "this table dose not exist"
+	fi
+
+}
 
 
 
