@@ -1,38 +1,6 @@
 #! /usr/bin/bash
 
 
-# function validate_name(){
-# 	echo "validate_name"
-# 	#To implement --->
-# }
-
-
-# #function to create a table(file) in the database(directory)
-# function create_table(){
-# 	#check if the file already exists 
-# 	if [ -f $1 ]
-# 	then 
-# 		echo "Table ($1) already exists"
-# 	else 
-# 		#if the no table with the entered name exists then check the constrains on the name 
-# 		if [ validate_name $1 ]
-# 		then 
-# 			# if the entered name is valid ---> make a file meta_data to store the columns names and its constrains
-# 			# prompt the user for the number of columns
-# 			read -p "Enter the number of columns" column_numbers
-# 			for ((i=0;i<$column_numbers;i++))
-# 			do
-# 				read -p "Enter column name: " column_name
-				
-			
-# 			done
-# 		else
-# 			echo "You entered an invalid name \n Table name should not contain ######"
-		
-# 		fi
-			
-# 	#TO IMPLEMENT ---> Tarek
-
 
 #function to list table names in a database
 function list_tables(){
@@ -51,23 +19,17 @@ function list_tables(){
 
 # # }
 
-# #function to rename an existing table in the DB
-# function rename_table() {
-# 	#TO IMPLEMENT ---> Tarek
-# 	echo "rename_table"
-
-
-# }
-
-
 
 #function to add records to a table
 function insert_into(){
+	local table_name=${1^^}
+	echo $table_name
 
-	if [ -f "$1" ]; then
-		if [ $# >1 ];
+	if [ -f $table_name ]; then
+		if [[ $# > 1 ]];
 		then 
 		echo "you must enter the tabel name only";
+		echo $#
 			return 0
 		fi
 					echo "you enter table $1"
@@ -83,9 +45,9 @@ function insert_into(){
 						then 
 						 pk="$field2"
 						fi
-    					name+=("$field2")
+    					name+=("${field2^^}")
     					type+=("$field3")
-						done < ./meta
+						done < ./${table_name}.metadata
 
 				declare -A freq_array
 
@@ -94,7 +56,7 @@ function insert_into(){
     			if [[ -n "$field1" ]]; then
    				 freq_array["$field1"]=$(( ${freq_array["$field1"]} + 1 ))
 				fi
-				done < ./data
+				done < ./${table_name}
 
 				new_data=""
 				pk_flag=0
@@ -119,7 +81,7 @@ function insert_into(){
   				if [[ ${type[$i]} =~ "int" && ! $dt =~ ^[0-9]+$ ]]; then
    				     echo "Error: Not a number."
    				     return 0
-    			elif [[ ${type[$i]} =~ "string" && ! $dt =~ ^[A-Za-z_]+$ ]]; then
+    			elif [[ ${type[$i]} =~ "str" && ! $dt =~ ^[A-Za-z_]+$ ]]; then
         			echo "Error: String cannot contain numbers or special characters."
         				return 0
 
@@ -134,25 +96,13 @@ function insert_into(){
         new_data+="$dt"
     fi
   done			
-			echo $new_data >> $1
+			echo $new_data >> $table_name
 	else
     echo "This table does not exist."
 	fi
 
 }
 
-# #function to present some records from a table
-# function select_from_table(){
-# 	echo "select_from_table"
-# 	#TO IMPLEMENT ---> Tarek
-
-
-# }
-
-# #function to update records in a table
-# function update_table(){
-# 	echo "update_table"
-# 	#TO IMPLEMENT ---> Tarek
 
 
 # }
@@ -161,46 +111,40 @@ function insert_into(){
 function drop_table() {
     echo "drop_table"
     # TO IMPLEMENT ---> Nizar
-    local table_name=$1
+    local table_name=${1^^}
 
     # Check if the file (table) exists
     if [ -f "$table_name" ]; then
         # Use rm -f to avoid errors if the file doesn't exist
         rm -f ./"$table_name"
-		  rm -f ./"$table_name.meta"
+		  rm -f ./"$table_name.metadata"
         echo "Table '$table_name' has been deleted."
     else
         echo "Table '$table_name' does not exist."
     fi
 }
 
-# #function to delete the table data but keep the structure
-# function truncate_table(){
-# 	echo "truncate_table"
-# 	#TO IMPLEMENT --->  Tarek
-	
-	
+
 # }
 
 #function to delete records from a table
 function delete_from_table(){
 	# table_name where condtion
-	table_name=$1
+	table_name=${1^^}
 	
 
-	if [ -f $1 ];then
-	if [ -s $1 ];then
+	if [ -f $table_name ];then
+	if [ -s $table_name ];then
 	 
-		if [[ $# -eq 3 ]]; 
+		if [[ $# -eq 3 ]]; #name where id=5
 			then
-				echo "you enter 3 arguments"
 				condtion=$2
 				check=$3
 				check_name=$(echo "$check" | awk -F= '{print $1}')
 				check_data=$(echo "$check" | awk -F= '{print $2}')
 				if [[ $condtion =~ [[:space:]]*[Ww][Hh][Ee][Rr][Ee][[:space:]]* ]]; then
 						valid_culmn=$(awk -F: -v  check_name="$check_name"  '
-						 {
+						 awk{
 						 
 						 	if (check_name == $2)
 							{
@@ -209,7 +153,7 @@ function delete_from_table(){
 							}
 						 }
 
-						 ' ./meta)
+						 ' ./${table_name}.metadata)
 
 					if [[ -n $valid_culmn ]];
 					then
@@ -227,36 +171,46 @@ function delete_from_table(){
 									END {
 										print lines
 										}
-											' ./data)
+											' ./${table_name})
 
 								for (( line=${#lines_to_remove}; line>0; line-- )); do
-   							 echo "Removing line $line"
-  							  sed -i "${line}d" ./data
+   									 echo "Removing line $line"
+  							  		sed -i "${line}d" ./data
 								done
 
 
 					else
-						echo "Column not found out side"
+						echo "Column not found"
 					fi
 
 					else
     					echo "Enter a correct condition"
 				fi
 
-		elif [[ $# -eq 2  ]];
+		elif [[ $# -eq 2  ]]; 
 			then 
 				echo "you did not enter the condtion"
-		else
+		elif [[ $# -eq 1  ]];
+			then
 				echo "you enter one arguments will remoev all data from the table"
-				sed -i  'd' $1
-				
+				# prompt the user to decide if he/she wants to delete all table data or a specific record/s
+				read -p "Do you want to delete all table data? (y/n): " answer
+				if [ ${answer^^} = "Y" -o ${answer^^} = "YES" ]
+				then 
+					# delete all lines inside table file and keep the metadata file
+					sed -i  'd' $table_name
+				elif [ ${answer^^} = "N" -o ${answer^^} = "NO" ]
+				then
+					#If the user entered "no" then abort deletion and return to the main menu 
+					return 0
+				else
+					echo "invalid answers"
+					return 0 
+				fi
 
-	
+		else
+			echo "your file is empty"
 		fi
-
-			else
-				echo "your file is empty"
-			fi
 	else
 		echo "this table dose not exist"
 	fi
@@ -334,7 +288,3 @@ do
 			echo "Invalid input. Please try again."
 	esac
 done   
-
-
-
-
