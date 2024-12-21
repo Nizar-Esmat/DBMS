@@ -1,27 +1,61 @@
-<<<<<<< tarek
 #! /usr/bin/bash 
-
 
 #function to validate the input 
 function validate_name() {
     local name=$1
+	
+	# if the user entered a name that exceedes the maximum allowed characters
+	test ${#name} -gt 64 && echo 'Databse name exceed maximum allowed length.'; echo 'Please enter a name less than 64 charcters.'
 
-    if [[ $name =~ ^[0-9] ]]; then
+
+	# if the user entered an empty string 
+	test -z $name && echo "Empty value. Database name must be at least one character."
+
+	# if the user entered a space in the name
+	if [[ $name =~ [[:space:]] ]]
+	then
+  		echo "Database name can not contain spaces."
+	fi
+
+	# if the user entered a name which starts with a number 
+	if [[ $name =~ ^[0-9] ]]; then
         echo "Invalid name: Cannot start with a number."
         return 0
     fi
-
-    if [[ $name =~ [^A-Za-z0-9_] ]]; then
+	
+	# if the user entered an unallowed charcter: ! @ # $ % ^ & * [ ] ( ) .
+	if [[ $name =~ [^A-Za-z0-9_] ]]; then
         echo "Invalid name: Cannot contain special characters."
         return 0
     fi
 
+	# if the user entered a name which starts with underscore _
+	if [[ $name =~ ^_ ]]
+	then
+  		echo "Invalid name: Cannot start with an underscore."
+	fi
+
+
+
+	# if the user entered a reserved key word in the SQL language e.g: SELECT INSERT HAVING NOTE (upper-case or lower-case)
+		# ABSOLUTE, ACTION, ADD, ALL, ALTER, ANALYZE, AND, AS, ASC, ASSERTION, AT, AUTHORIZATION, BACKUP, BEGIN, BETWEEN, BY, CASE, CAST, 
+		# CHECK, COLLATE, COLUMN, COMMIT, COMPUTE, CONNECT, CONSTRAINT, CONTAINMENT, CONTINUE, CORRESPONDING, CREATE, CROSS, CUBE, CURRENT, 
+		# CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP, CURRENT_USER, DATABASE, DATE, DAY, DEALLOCATE, DECLARE, DEFAULT, DEFER, DELETE, DESC, 
+		# DESCRIBE, DIAGNOSTICS, DISCONNECT, DISTINCT, DO, DOMAIN, DROP, DYNAMIC, ELSE, END, ESCAPE, EXCEPT, EXECUTE, EXISTS, EXPLAIN, EXTEND, 
+		# FALSE, FETCH, FILTER, FIRST, FLOAT, FOR, FOREIGN, FROM, FULL, FUNCTION, GENERAL, GLOBAL, GRANT, GROUP, HAVING, HOLD, IDENTITY, IF, 
+		# IMMEDIATE, IN, INDICATOR, INHERIT, INOUT, INSENSITIVE, INSERT, INTERSECT, INTERVAL, INTO, IS, ISOLATION, JOIN, KEY, LANGUAGE, LATERAL, 
+		# LEADING, LEFT, LIKE, LIMIT, LOCAL, MATCH, MAXVALUE, MEMBER, MERGE, MINVALUE, MODIFY, MODULE, MONTH, NATURAL, NO, NOT, NULL, NUMERIC, OF, 
+		# OFF, OLD, ON, ONLY, OPEN, OPERATOR, OPTION, OR, ORDER, OUT, OUTER, OVER, PARAMETER, PARTITION, PASCAL, PLACING, PRECISION, PREPARE, PRIMARY, 
+		# PRINT, PROCEDURE, PUBLIC, READ, REAL, REASSIGN, RECHECK, RECOMPILE, REF, REFERENCES, REGRANT, RELATIVE, RELEASE, RENAME, REPEAT, REPLACE, 
+		# REQUIRE, RESPECT, RESTRICT, RETURN, REVOKE, RIGHT, ROLE, ROW, ROWS, SAVEPOINT, SCHEMA, SECOND, SECTION, SELECT, SENSITIVE, SEQUENCE, 
+		# SERIALIZABLE, SESSION, SET, SIZE, SMALLINT, SOME, SPECIFIC, SQL, SQLCODE, SQLERROR, SQLSTATE, START, STATIC, STATISTICS, SUBCLASS, 
+		# SUBPARTITION, SUM, SYNONYM, SYSTEM, TABLE, TABLESAMPLE, TEMP, TEMPORARY, THAN, THEN, TIME, TIMESTAMP, TO, TRIGGER, TRUE, TRUNCATE, TYPED, 
+		# UNION, UNIQUE, UNLISTEN, UNPIVOT, UPDATE, USAGE, USER, USING, VALUE, VALUES, VARCHAR, VIEW, WHEN, WHERE, WITH, WORK, WRITE, XML
+
+    
+
     return 1 
 }
-
-
-
-
 
 #function to create data base
 clear
@@ -44,12 +78,29 @@ function create_DB(){
 
 
 #function to rename an existing Database
-function rename_DB() {
-	
-	#TO IMPLEMENT ---> Tarek
-
-
-
+function rename_DB(){
+	#Prompt the user to enter the current name of database
+	read -p "Please enter the name of database you want to rename:" DB_name
+	# todo --> make the name (case-insenstive)
+	if [ -d $DB_name ]
+	then	
+	#declare -i flag=0
+	while [ 1 ]
+	do
+		read -p "Please enter the new name: " DB_new_name 
+		if [ validate_name $DB_new_name ]
+		then 
+			mv $DB_name $DB_new_name
+			break
+		else
+			echo "Invalid name. Name must not contain ..."
+			read -p "return to main menu press (y) to re-enter the name press(n): " confirm
+			if [ $confirm =~ "yes" ]
+				break
+			fi
+		fi 
+	done
+	fi
 }
 
 
@@ -79,15 +130,15 @@ function drop_DB(){
 		if [ `ls -A $1` ] # return true if there are files in the directory
 		then 
 			echo "The Database contains Data"
-			read -p "Are you sure you want to DROP Data Base? (y/n)? " check_drop
+			read -p "Are you sure you want to DROP Data Base? (y/n)? " confirm_drop
 			
-			if [ "yes" =~  $check_drop ]
+			if [ "YES" =~  ${confirm_drop^^} ]
 			then 
 				# f to force delete the content of directory without re-warn the user
 				rm -rf $1
 				echo "Database ($DB_name) deleted"
 				return 0
-			elif  [ "no" =~  $check_drop ]
+			elif  [ "NO" =~  ${confirm_drop^^} ]
 			then 
 				echo "Database ($DB_name) wasn't deleted"
 				return 1
@@ -109,7 +160,7 @@ function drop_DB(){
 # This function connects the user to a Database in the DBMS
 function connect_to_DB(){
 	#first, prompt the user to enter the database name (directory)
-	read -p "Please enter DB name you want to DROP" DB_name
+	read -p "Please enter DB name you want to connect" DB_name
 	
 	# Validate that the database name exists in the DBMS
 	if [ -d  $DB_name ]
@@ -117,13 +168,13 @@ function connect_to_DB(){
 		cd $DB_name
 		echo "You are now in the ($DB_name) Database"
 		#calling script  "db_script.sh" to manage tables.
-		. ./db_script.sh
+		.././db_script.sh
 		return 0
 	#if there is no database with the entered file
 	else 
-	then 
 		echo "No Database with name ($DB_name) existing"
 		return 1
+	fi
 }
 
 
@@ -135,10 +186,10 @@ select option in "Create Database" "List Databases" "Delete Database" "Connect t
 do
     case $option in
         "Create Database")
-            createDB
+            create_DB
             ;;
         "List Databases")
-            listDB
+            list_DB
             ;;
         "Delete Database")
             drop_DB
@@ -163,5 +214,3 @@ do
             ;;
     esac
 done
-
->>>>>>> master
