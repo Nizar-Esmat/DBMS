@@ -6,7 +6,7 @@ function validate_name(){
 	# To implement ---> Tarek
 	return 1
 	
-	
+	# NizAr ---> true 
 }
 
 
@@ -16,7 +16,7 @@ function create_table(){
 	read -p "Please enter the name of the table you want to create: " table_name
 
 	# Check if the file already exists
-	if [ -f $table_name ]
+	if [ -f ${table_name^^} ]
 	then 
 		echo "Table ($table_name) already exists"
 	# if the table does't exist ---> validate the table name 
@@ -25,10 +25,10 @@ function create_table(){
 		if [ validate_name $table_name ]
 		then 
 			# if the entered name is valid ---> make a file to store the table's data
-			touch $table_name
+			touch ${table_name^^}
 	
 			# Make a (hidden) file meta_data to store the columns names and its constrains
-			touch .$table_name.metadata
+			touch .${table_name^^}.metadata
 			
 			# prompt the user for the number of columns
 			read -p "Enter the number of columns" column_numbers
@@ -39,6 +39,7 @@ function create_table(){
 			# Loop to store data about each cloumn
 			for ((i=0;i<$column_numbers;i++))
 			do
+				# metadata are stored for each column as follwing ---> pk:NAME:data_type
 				# Variable (column_data) is to store name, data_type and PK(If exists) of each colun and store it in (.table.meta) hidden file 
 				column_data=""
 				#Prompt the user to enter the column name
@@ -46,8 +47,8 @@ function create_table(){
 				# Check if the user entered a valid column_name
 				if [ validate_name $column_name ]
 				then
-					column_data+=":$column_name"
-				# If the user entered an invalid datatype ---> keep re-prompting for a valid datatype
+					column_data = $column_data + ":" + ${column_name^^}
+				# If the user entered an invalid name ---> keep re-prompting for a valid name
 				else 
 					while true 
 					do 
@@ -56,7 +57,7 @@ function create_table(){
 						# If the user entered a valid name ---> break from the loop
 						if [ validate_name $column_name ]
 						then
-							column_data+=":$column_name"
+							column_data = $column_data + ":" + ${column_name^^}
 							break
 						fi
 					done
@@ -65,9 +66,13 @@ function create_table(){
 				# Prompt the user to enter the column datatype
 				read -p "Enter column($(($i + 1))) datatype (int/str)" col_datatype
 				# Check if the user entered a valid data_type
-				if [ $col_datatype == "int" -o $col_datatype == "str"]
+				if [ ${col_datatype^^} == "INT" -o $col_datatype == "INTGER"]
 				then 
-					column_data+=":$col_datatype"
+					column_data+=":int"
+				
+				elif [ ${col_datatype^^} == "STR" -o $col_datatype == "STRING"]
+					column_data+=":str"
+
 				# If the user entered an invalid datatype ---> keep re-prompting for a valid datatype
 				else 
 					while true 
@@ -75,9 +80,12 @@ function create_table(){
 						echo 'You entered an invalid datatype. Allowed datatypes are strings & intgers'
 						read -p "Please enter (str) to store strings and (int) to store intgers" col_datatype
 						# if the user entered a valid datatype break from the loop
-						if [ $col_datatype = "int" -o $col_datatype = "str"]
+						if [ ${col_datatype^^} = "INT" -o ${col_datatype^^} = "INTEGER"]
 						then 
-							column_data+=":$col_datatype"
+							column_data+=":int"
+							break
+						elif [ ${col_datatype^^} = "STR" -o ${col_datatype^^} = "STRING" ]
+							column_data+=":str"
 							break
 						fi
 					done	
@@ -91,17 +99,17 @@ function create_table(){
 					while true 
 					do
 						# if the user entered y / yes
-						if [ $PK = "y" -o $PK = "yes" ]
+						if [ ${PK^^} = "Y" -o $PK = "YES" ]
 						then 
 							# Change (pk_flag) status to be 1 ---> so no other column set to be PK
 							$pk_flag=1
-							column_data = "pk" + $column_data  # the final form of the meta_data about column ---> PK:column_name:column_data_type
+							column_data = "pk" + $column_data  # the final form of the meta_data about column ---> PK:COLUMN_NAME:column_data_type
 							break
 						
 						# if the user entered no / n
-						elif [ $PK = "n" -o $PK = "no" ]
+						elif [ ${PK^^} = "N" -o $PK = "NO" ]
 						then
-							column_data = "npk" + $column_data # the final form of the meta_data about column ---> PK:column_name:column_data_type
+							column_data = "npk" + $column_data # the final form of the meta_data about column ---> npk:COLUMN_NAME:column_data_type
 							break
 
 						# if the user entered an invalid option
@@ -109,12 +117,11 @@ function create_table(){
 							echo "Invalid option." 
 							read "Enter (y) to set column($column_name) to be a Primay Key, Enter(n) otherwise" PK
 						fi
-
 					done 
 
 				# ---> if there is a choosen Primary key
 				else 
-					column_data = "npk" + $column_data
+					column_data = "npk" + $column_data   # the final form of the meta_data about column ---> npk:COLUMN_NAME:column_data_type
 				fi
 
 				# Append the column metadata to the table_meta_data file
@@ -132,18 +139,18 @@ function create_table(){
 function rename_table() {
 	#Prompt the user to enter the current name of table
 	read -p "Please enter the name of table you want to rename:" table_name
-	if [ -f $table_name ]
+	if [ -f ${table_name^^} ]
 	then	
 		while true
 		do
 			read -p "Please enter the new name: " table_new_name 
 			if [ validate_name $table_new_name  ]
 			then 
-				mv $table_name $table_new_name
-				mv ".$table_name.meta" ".$table_new_name.meta" 
+				mv ${table_name^^} ${table_new_name^^}
+				mv ".${table_name^^}.metadata" ".${table_new_name^^}.metadata" 
 				break
 			else
-				echo "Invalid name. Name must not contain ..."
+				echo "Invalid name."
 				read -p "To re-enter the new table name press any key. To return to main menu press(x): " confirm
 				if [ $confirm = "x" -o  $confirm = "X" ]
 				then
@@ -152,9 +159,6 @@ function rename_table() {
 			fi 
 		done
 	fi
-
-
-
 }
 
 #function to list table names in a database
@@ -164,8 +168,8 @@ function list_tables(){
     do
         echo $file
     done
-	
 }
+
 
 #function to add records to a table
 function insert_into(){
@@ -192,43 +196,9 @@ function insert_into(){
 
 # }
 
-#function to delete the whole table including its structure
-# function drop_table(){
-	
-# 	#TO IMPLEMENT --->  Nizar
-	
-	
-# }
 
 
-#function to delete records from a table
-function delete_from_table(){
-	
-	# Prompt the user for the name of the table and check if it exists in the database
-	read -p "Enter Table name: " table_name
-	if [ -f $table_name ]
-	then
-		# prompt the user to decide if he/she wants to delete all table data or a specific record/s
-		read -p "Do you want to delete all table data? (y/n): " answer
-		if [ $answer = "y" -o $answer = "yes" ]
-		then 
-			# delete all lines inside table file and keep the metadata file
-		elif [ $answer = "n" -o $answer = "no" ]
-		then
-			# Prompt the user for the records he/she want to delete
-	
-	# If the table name does't exist in the database
-	else 
-		echo "This table doesn't exist in the database"
-	fi
 
- 
-	
-
-	#TO IMPLEMENT ---> Nizar
-
-
-}
 
 
 
@@ -292,7 +262,3 @@ do
 			echo "Invalid input. Please try again."
 	esac
 done   
-
-
-
-

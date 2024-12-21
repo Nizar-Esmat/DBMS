@@ -1,7 +1,7 @@
 #! /usr/bin/bash 
 
 #function to validate the input 
-function validate_name() {
+function validate_DB_name() {
     local name=$1
 	
 	# if the user entered a name that exceedes the maximum allowed characters
@@ -30,12 +30,10 @@ function validate_name() {
     fi
 
 	# if the user entered a name which starts with underscore _
-	if [[ $name =~ ^_ ]]
+	if [[ $name = ^_ ]]
 	then
   		echo "Invalid name: Cannot start with an underscore."
 	fi
-
-
 
 	# if the user entered a reserved key word in the SQL language e.g: SELECT INSERT HAVING NOTE (upper-case or lower-case)
 		# ABSOLUTE, ACTION, ADD, ALL, ALTER, ANALYZE, AND, AS, ASC, ASSERTION, AT, AUTHORIZATION, BACKUP, BEGIN, BETWEEN, BY, CASE, CAST, 
@@ -61,18 +59,17 @@ function validate_name() {
 clear
 function create_DB(){
     read -p "Enter the name of the database: " DB_name
-
-    validateName $DB_name
-    validation_result=$?
-    if (($validation_result)); then 
-        if [[ ! -d "$DB_name" ]]; then 
-            mkdir $DB_name
-            echo "Database created."
-        else 
-            echo "This database already exists."
-        fi
+	# check if there is an existing DB with the same name
+	if [ -d "${DB_name^^}" ]
+	then 
+		echo "This database already exists."
+            
     else
-        echo "You have an error."
+		if [ validate_DB_name() $DB_name ]
+		then 
+			mkdir ${DB_name^^}
+			echo "Database ($DB_name)created."
+        fi
     fi
 }		
 
@@ -82,20 +79,20 @@ function rename_DB(){
 	#Prompt the user to enter the current name of database
 	read -p "Please enter the name of database you want to rename:" DB_name
 	# todo --> make the name (case-insenstive)
-	if [ -d $DB_name ]
+	if [ -d ${DB_name^^} ]
 	then	
 	#declare -i flag=0
-	while [ 1 ]
+	while true
 	do
 		read -p "Please enter the new name: " DB_new_name 
-		if [ validate_name $DB_new_name ]
+		if [ validate_name ${DB_new_name^^} ]
 		then 
-			mv $DB_name $DB_new_name
+			mv $DB_name ${DB_new_name^^}
 			break
 		else
-			echo "Invalid name. Name must not contain ..."
-			read -p "return to main menu press (y) to re-enter the name press(n): " confirm
-			if [ $confirm =~ "yes" ]
+			echo "Invalid name"
+			read -p "return to main menu press (x) to re-enter the name press any key: " confirm
+			if [ ${confirm^^} = "X" ]
 				break
 			fi
 		fi 
@@ -124,7 +121,7 @@ function drop_DB(){
 	read -p "Please enter DB name you want to DROP" DB_name
 	
 	# Validate that the database name exists in the DBMS
-	if [ -d  $DB_name ]
+	if [ -d  ${DB_name^^} ]
 	then
 		#validate if the database(dir) contains tables(files) to warn the user
 		if [ `ls -A $1` ] # return true if there are files in the directory
@@ -163,9 +160,9 @@ function connect_to_DB(){
 	read -p "Please enter DB name you want to connect" DB_name
 	
 	# Validate that the database name exists in the DBMS
-	if [ -d  $DB_name ]
+	if [ -d  ${DB_name^^} ]
 	then
-		cd $DB_name
+		cd ${DB_name^^}
 		echo "You are now in the ($DB_name) Database"
 		#calling script  "db_script.sh" to manage tables.
 		.././db_script.sh
