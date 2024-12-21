@@ -65,6 +65,11 @@ function list_tables(){
 function insert_into(){
 
 	if [ -f "$1" ]; then
+		if [ $# >1 ];
+		then 
+		echo "you must enter the tabel name only";
+			return 0
+		fi
 					echo "you enter table $1"
 						name=()
 						type=()
@@ -117,6 +122,9 @@ function insert_into(){
     			elif [[ ${type[$i]} =~ "string" && ! $dt =~ ^[A-Za-z_]+$ ]]; then
         			echo "Error: String cannot contain numbers or special characters."
         				return 0
+
+
+		
     fi
 
     # Append data to the `new_data` variable
@@ -125,9 +133,7 @@ function insert_into(){
     else
         new_data+="$dt"
     fi
-done
-
-				
+  done			
 			echo $new_data >> $1
 	else
     echo "This table does not exist."
@@ -177,12 +183,6 @@ function drop_table() {
 # }
 
 #function to delete records from a table
-
-#1. check that the table is ixest
-#2. check that the clolum of condtions the ixsect
-#3. if the raguments =1 make the data file empty
- #else if raguments=3 chekc that the $2 == "where" and the $3 data is in the data file then delete this line
-
 function delete_from_table(){
 	# table_name where condtion
 	table_name=$1
