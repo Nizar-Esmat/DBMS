@@ -334,6 +334,20 @@ function insert_into(){
   			      read -p "Enter the new data for ${name[$i]} of type (${type[$i]}): " dt
   			  fi
 
+if [[ -z $dt && -z $s_pk ]]; then
+    echo "Input is empty. Assigning 'null'."
+    dt="null"
+elif [[ ${type[$i]} =~ "int" && ! $dt =~ ^[0-9]+$ ]]; then
+    echo "Error: Not a number."
+    return 0
+elif [[ ${type[$i]} =~ "str" && ! $dt =~ ^[A-Za-z_]+$ ]]; then
+    echo "Error: String cannot contain numbers or special characters."
+    return 0
+fi
+
+
+
+
   			  if [[ $is_pk -eq 1 ]]; then
     	  	    if [[ ${freq_array[$dt]} -ge 1 ]]; then
     		        echo "The primary key cannot be duplicate."
@@ -342,6 +356,7 @@ function insert_into(){
        			     freq_array["$dt"]=$(( ${freq_array["$dt"]} + 1 ))
       			  fi
   			  fi
+
 
   				if [[ -z $dt ]]
 				then
@@ -359,7 +374,6 @@ function insert_into(){
 
 		
     	fi
-
     # Append data to the `new_data` variable
     if [[ $i -ne 0 ]]
     then
@@ -375,17 +389,193 @@ function insert_into(){
 
 }
 
+# data age=10 where name=Nizar
+function update_table(){
+	    table_name=${1^^}
 
-#function to update records in a table
-# function update_table(){
-	
+    # Check if the table exists
+if [[ ! -f $table_name ]]; then
+        echo "This table does not exist."
+        return 1
+fi
+
+    # Check if the table is empty
+if [[ ! -s $table_name ]]; then
+  echo "The table is empty."
+ return 1
+ fi
+
+if [[ $# -eq 4 ]]; then
+    # where
+    check=$3
+    if [[ $check =~ [[:space:]]*[Ww][Hh][Ee][Rr][Ee][[:space:]]* ]]; then
+        condtion_to_change=$2
+        special_char=$(echo "$condtion_to_change" | grep -o '[=]')
+        if [[ $special_char =~ ^[=] ]]; then 
+            column_to_change=$(echo "$condtion_to_change" | awk -F= '{print $1}')
+            column_to_change=${column_to_change^^}
+            data_to_change=$(echo "$condtion_to_change" | awk -F= '{print $2}')
+        else
+            echo "Enter a valid data"
+        fi
+
+        valid_column_to_change=$(awk -F: -v column_to_change="$column_to_change" ' 
+            $2 == column_to_change { print NR; exit }
+            ' ".${table_name}.metadata")
+
+        is_pk=$(awk -F: -v column_to_change="$column_to_change" '
+            $1 == "pk" && $2 == column_to_change {print 1; exit}
+            ' ".${table_name}.metadata")
+
+        if [[ ! $valid_column_to_change ]]; then
+            echo "There is no column with this name"
+            return 0
+        fi
+
+        # name=Nizar
+        condtion_to_check=$4
+	special_char_to_check=$(echo "$condtion_to_check" | grep -o '[=<>]')
+if [[ $special_char_to_check =~ ^['=<>'] ]]; then 
+    column_to_check=$(echo "$condtion_to_check" | awk -F'[=<>]' '{print $1}')
+    column_to_check=${column_to_check^^}  # Convert to uppercase
+    data_to_check=$(echo "$condtion_to_check" | awk -F'[=<>]' '{print $2}')
+else
+    echo "Enter a correct condition to check"
+    return 0
+fi
+
+valid_column_to_check=$(awk -F: -v column_to_check="$column_to_check" ' 
+    $2 == column_to_check { print NR; exit }
+' ".${table_name}.metadata")
+
+if [[ -z $valid_column_to_check ]]; then
+    echo "Column not found"
+    return 0
+fi
+
+if [[ $special_char_to_check = '>' ]]; then
+    lines_to_change=$(awk -F'|' -v col="$valid_column_to_check" -v value="$data_to_check" '
+        $col > value { print NR }
+    ' "$table_name")
+elif [[ $special_char_to_check = '<' ]]; then
+    lines_to_change=$(awk -F'|' -v col="$valid_column_to_check" -v value="$data_to_check" '
+        $col < value { print NR }
+    ' "$table_name")
+elif [[ $special_char_to_check = '=' ]]; then
+    lines_to_change=$(awk -F'|' -v col="$valid_column_to_check" -v value="$data_to_check" '
+        $col == value { print NR }
+    ' "$table_name")
+fi
+
+if [[ -z $lines_to_change ]]; then
+    echo "No matching data found for the condition"
+else
+    echo "Lines to change: $lines_to_change"
+fi
 
 
+        if [[ ${#lines_to_change} -eq 0 ]]; then
+            echo "There is no data with this value"
+        else
+            if [[ $is_pk -eq 1 ]]; then
+                is_dublicat=$(awk -F"|" -v valid_column_to_check="$valid_column_to_check" -v value="$data_to_change" '
+                    $valid_column_to_check == value { print 1; exit }
+                    ' "$table_name")
+
+                if [[ $is_dublicat -eq 1 ]]; then
+                    echo "This pk already exists"
+                    return 0
+                fi
+                echo "You will change your pk value"
+            else
+                echo "Changing data is not pk"
+            fi
+            echo "Changing data here"
+            echo $lines_to_change
+
+            IFS=$'\n' read -rd '' -a lines_array <<< "$lines_to_change"
+
+            for line in "${lines_array[@]}"
+			 do
+                awk -F'|' -v col="$valid_column_to_change" -v new_val="$data_to_change" '{
+                    OFS="|";         
+                    $col = new_val;  
+                    print $0; 
+                }' "$table_name" > temp_file && mv temp_file "$table_name"
+            done
+        fi
+    fi
 
 
+elif [[ $# -eq 2  ]];
+then 
+echo "This will change all data in the column"
 
 
+condition_to_change=$2
+special_char=$(echo "$condition_to_change" | grep -o '[=]')
 
+if [[ $special_char =~ ^[=] ]]; then
+    column_to_change=$(echo "$condition_to_change" | awk -F= '{print $1}')
+    column_to_change=${column_to_change^^}  
+    data_to_change=$(echo "$condition_to_change" | awk -F= '{print $2}')
+else
+    echo "Enter a valid data format (column=value)"
+    return 0
+fi
+valid_column=$(awk -F: -v column_to_change="$column_to_change" '
+    $2 == column_to_change { print NR; exit }
+' ".${table_name}.metadata")
+
+is_pk=$(awk -F: -v column_to_change="$column_to_change" '
+    $1 == "pk" && $2 == column_to_change {print 1; exit}
+' ".${table_name}.metadata")
+
+
+if [[ $valid_column ]]; then
+    if [[ $is_pk -eq 1 ]]; then
+        echo "You cannot make all the pk with the same value"
+        return 0
+    fi
+
+    echo "Changing the data"
+
+    valid_column_index=$(awk -F: -v column_to_change="$column_to_change" '
+        $2 == column_to_change { print NR; exit }
+    ' ".${table_name}.metadata")
+
+    echo "Column index: $valid_column_index"
+
+    if [[ -z $valid_column_index ]]; then
+        echo "Column not found in metadata"
+        return 0
+    fi
+
+  
+awk -F'|' -v col="$valid_column_index" -v new_val="$data_to_change" '{
+    $col = new_val; 
+    OFS="|";        
+    print $0;       
+}' "$table_name" > "$table_name" && mv temp_file "$table_name"
+
+
+else
+    echo "The column $column_to_change was not found."
+fi
+
+fi
+
+}
+
+
+function drop_table() {
+    local table_name=${1^^}
+
+    if [ -f "$table_name" ]
+    then
+        rm -f "$table_name"
+		rm -f ".${table_name}.metadata"
+        echo "Table '$1' has been deleted."
 
 
 
@@ -432,7 +622,6 @@ function delete_from_table() {
 	# Convert table name to uppercase to avoid case-senstive problems
     table_name=${table_name^^}
 
-    # Check if the table exists
     if [[ ! -f $table_name ]]; then
         echo "This table does not exist."
         return 1
@@ -471,12 +660,14 @@ function delete_from_table() {
 
                 if [[ -n $lines_to_remove ]]; then
                     # Delete matching lines
-                    echo "$lines_to_remove" | tac | while read -r line; do
-                        # for (( i=$(length($lines_to_remove)); i>0; i--))
-						# do
-						echo "Removing line $line"
-                        sed -i "${line}d" "$table_name"
-                    done
+                    # Split the lines_to_remove into an array
+                IFS=$'\n' read -rd '' -a lines_array <<< "$lines_to_remove"
+
+                 for ((i=${#lines_array[@]}-1; i>=0; i--)); do
+                      line="${lines_array[$i]}"
+                      echo "Removing line $line"
+                      sed -i "${line}d" "$table_name"
+                done
                     echo "Records deleted successfully."
                 else
                     echo "No matching records found."
@@ -644,30 +835,6 @@ function select_from_table() {
 						esac
 					fi
 			;;
-
-			"Display specific column")
-			read -p "Enter column to display: " column_name
-			column_name=${column_name^^} 
-			
-			# Check if the column exists in the metadata
-			column_index=$(awk -F: -v col_name="$column_name" '
-				$2 == col_name { print NR; exit }
-			' ".${table_name}.metadata")
-
-			if [[ -z "$column_index" ]] 
-			then
-				echo "The column '$column_name' does not exist in the table."
-				return
-			fi
-
-			# Display the column name and its values
-			echo "Displaying column: $column_name"
-			awk -F'|' -v col_idx="$column_index" '
-			BEGIN { print "----- " ENVIRON["column_name"] " -----" }
-			{ print $col_idx }
-			' "$table_name"
-			;;
-		
 			*)
 				 echo "Invalid input. Please try again."
 			;;
@@ -704,15 +871,16 @@ do
 		"Delete from Table")
 			delete_from_table
 			;;
-
+			
+		"Update Table")
+			read -p "Please enter the name of the Table you want to update: " table_name
+			update_table $table_name
+			;;
+	
 		"Rename table")
 			rename_table
 			;;
 
-# 		"Update Table")
-# 			read -p "Please enter the name of the Table you want to update: " table_name
-# 			update_table $table_name
-# 			;;
 
 		"Exit")
 			read -p "Do you want to exit? (yes/no): " confirm_exit
@@ -736,4 +904,4 @@ do
 			echo "Invalid input. Please try again."
 		;;
 	esac
-done  
+		done 

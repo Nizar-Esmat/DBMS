@@ -140,3 +140,26 @@ This script contains reusable functions to validate user inputs for names, data 
 ## Conclusion:
 This DBMS system provides basic database and table management functionality using Bash scripting. It ensures proper validation, structure, and organization for managing simple data in a Linux environment.
 
+
+
+get table name(v)
+   get culmn name(v) 
+   ex : age=10 where name=Nizar
+      age=10 where name=Nizar
+       age_col=? #from mate
+       name_col=? #from 
+
+       awk  name =nizar
+            lines_to_change
+
+      for lines_to_change sad 
+
+      age=10 where 
+      error
+
+      age=10 
+      change all coulmn data to 10 
+
+
+
+note check when change the pk
