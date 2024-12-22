@@ -372,29 +372,49 @@ if [[ $# -eq 4 ]]; then
 
         # name=Nizar
         condtion_to_check=$4
-        special_char_to_check=$(echo "$condtion_to_check" | grep -o '[=]')
-        if [[ $special_char_to_check =~ ^[=] ]]; then 
-            column_to_check=$(echo "$condtion_to_check" | awk -F= '{print $1}')
-            column_to_check=${column_to_check^^}
-            data_to_check=$(echo "$condtion_to_check" | awk -F= '{print $2}')
-        else
-            echo "Enter a correct condition to check"
-        fi
+	special_char_to_check=$(echo "$condtion_to_check" | grep -o '[=<>]')
+if [[ $special_char_to_check =~ ^['=<>'] ]]; then 
+    column_to_check=$(echo "$condtion_to_check" | awk -F'[=<>]' '{print $1}')
+    column_to_check=${column_to_check^^}  # Convert to uppercase
+    data_to_check=$(echo "$condtion_to_check" | awk -F'[=<>]' '{print $2}')
+else
+    echo "Enter a correct condition to check"
+    return 0
+fi
 
-        valid_column_to_check=$(awk -F: -v column_to_check="$column_to_check" ' 
-            $2 == column_to_check { print NR; exit }
-            ' ".${table_name}.metadata")
+valid_column_to_check=$(awk -F: -v column_to_check="$column_to_check" ' 
+    $2 == column_to_check { print NR; exit }
+' ".${table_name}.metadata")
 
-        # Get the lines to change
-        lines_to_change=$(awk -F'|' -v valid_column_to_check="$valid_column_to_check" -v value="$data_to_check" '
-            $valid_column_to_check == value { print NR }
-            ' "$table_name")
+if [[ -z $valid_column_to_check ]]; then
+    echo "Column not found"
+    return 0
+fi
 
-        # Check if there is any data to change
+if [[ $special_char_to_check = '>' ]]; then
+    lines_to_change=$(awk -F'|' -v col="$valid_column_to_check" -v value="$data_to_check" '
+        $col > value { print NR }
+    ' "$table_name")
+elif [[ $special_char_to_check = '<' ]]; then
+    lines_to_change=$(awk -F'|' -v col="$valid_column_to_check" -v value="$data_to_check" '
+        $col < value { print NR }
+    ' "$table_name")
+elif [[ $special_char_to_check = '=' ]]; then
+    lines_to_change=$(awk -F'|' -v col="$valid_column_to_check" -v value="$data_to_check" '
+        $col == value { print NR }
+    ' "$table_name")
+fi
+
+if [[ -z $lines_to_change ]]; then
+    echo "No matching data found for the condition"
+else
+    echo "Lines to change: $lines_to_change"
+fi
+
+
         if [[ ${#lines_to_change} -eq 0 ]]; then
             echo "There is no data with this value"
         else
-            echo $is_pk
             if [[ $is_pk -eq 1 ]]; then
                 is_dublicat=$(awk -F"|" -v valid_column_to_check="$valid_column_to_check" -v value="$data_to_change" '
                     $valid_column_to_check == value { print 1; exit }
@@ -411,10 +431,8 @@ if [[ $# -eq 4 ]]; then
             echo "Changing data here"
             echo $lines_to_change
 
-            # Split lines_to_change into an array
             IFS=$'\n' read -rd '' -a lines_array <<< "$lines_to_change"
 
-            # Loop through each line and change the data
             for line in "${lines_array[@]}"
 			 do
                 awk -F'|' -v col="$valid_column_to_change" -v new_val="$data_to_change" '{
@@ -488,14 +506,11 @@ fi
 
 
 
-#function to delete the whole table including its structure
 function drop_table() {
     local table_name=${1^^}
 
-    # Check if the file (table) exists
     if [ -f "$table_name" ]
     then
-        # Use rm -f to avoid errors if the file doesn't exist
         rm -f "$table_name"
 		rm -f ".${table_name}.metadata"
         echo "Table '$1' has been deleted."
@@ -505,12 +520,9 @@ function drop_table() {
 }
 
 
-#function to delete records from a table
 function delete_from_table() {
-    # Convert table name to uppercase
     table_name=${1^^}
 
-    # Check if the table exists
     if [[ ! -f $table_name ]]; then
         echo "This table does not exist."
         return 1
