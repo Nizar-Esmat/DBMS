@@ -1,24 +1,27 @@
 #! /usr/bin/bash
 
 # Functions that validates the name of a table
-# Returns 1 if the name is valid, return 0 if the name is invalid
+# Returns 1 if the table name is invalid, return 0 if the table name is valid
 function validate_table_name() {
     local table_name=$1
 
     # Check if the table name exceeds the maximum allowed characters
-    if [[ ${#table_name} -gt 64 ]]; then
+    if [[ ${#table_name} -gt 64 ]]
+	then
         echo "Invalid table name. Table name exceeds the maximum allowed length (64 characters)."
         return 1
     fi
 
     # Check if the table name is empty
-    if [[ -z $table_name ]]; then
+    if [[ -z "$table_name" ]]
+	then
         echo "Invalid table name. Table name must be at least one character."
         return 1
     fi
 
     # Check if the table name contains spaces
-    if [[ $table_name =~ [[:space:]] ]]; then
+    if [[ $table_name == " " ]]
+	then
         echo "Invalid table name. Table name cannot contain spaces."
         return 1
     fi
@@ -29,21 +32,36 @@ function validate_table_name() {
         return 1
     fi
 
-    # Check if the table name contains special characters other than underscore
-    if [[ $table_name =~ [^A-Za-z0-9_] ]]; then
-        echo "Invalid table name. Table name cannot contain special characters (except underscores)."
+	# Check if the table name starts with an underscore
+    if [[ $table_name =~ ^[_] ]]
+	then
+        echo "Invalid table name. Table name cannot start with an underscore"
         return 1
     fi
 
-    # Check if the table name starts with an underscore
-    if [[ $table_name =~ ^_ ]]; then
-        echo "Invalid table name. Table name cannot start with an underscore."
+	# Check if the table name starts with a (.)
+    if [[ $table_name =~ ^[.] ]]
+	then
+        echo "Invalid table name. Table name cannot start with a period(.)"
+        return 1
+    fi
+
+	# Check if the table name starts with (-)
+    if [[ $table_name =~ ^[-] ]]
+	then
+        echo "Invalid table name. Table name cannot start with (-)"
+        return 1
+    fi
+    
+	# Check if the table name contains special characters other than underscore
+    if [[ $table_name =~ [^A-Za-z0-9_.-] ]]; then
+        echo "Invalid table name. Table name cannot contain special characters (except underscores)."
         return 1
     fi
 
     # Check if the table name matches any SQL reserved keywords
     reserved_keywords=(
-        ABSOLUTE ACTION ADD ALL ALTER ANALYZE AND AS ASC ASSERTION AT AUTHORIZATION BACKUP BEGIN BETWEEN BY CASE CAST
+        ABSOLUTE ACTION ADD ALL ALTER ANALYZE AND AS ASC ASSERTION AT ANY AUTHORIZATION BACKUP BEGIN BETWEEN BY CASE CAST
         CHECK COLLATE COLUMN COMMIT COMPUTE CONNECT CONSTRAINT CONTAINMENT CONTINUE CORRESPONDING CREATE CROSS CUBE CURRENT
         CURRENT_DATE CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER DATABASE DATE DAY DEALLOCATE DECLARE DEFAULT DEFER DELETE DESC
         DESCRIBE DIAGNOSTICS DISCONNECT DISTINCT DO DOMAIN DROP DYNAMIC ELSE END ESCAPE EXCEPT EXECUTE EXISTS EXPLAIN EXTEND
@@ -58,8 +76,10 @@ function validate_table_name() {
         UNION UNIQUE UNLISTEN UNPIVOT UPDATE USAGE USER USING VALUE VALUES VARCHAR VIEW WHEN WHERE WITH WORK WRITE XML
     )
 
-    for keyword in "${reserved_keywords[@]}"; do
-        if [[ "${table_name^^}" == "$keyword" ]]; then
+    for keyword in "${reserved_keywords[@]}"
+	do
+        if [[ "${table_name^^}" == "$keyword" ]]
+		then
             echo "Invalid table name. Table name cannot be an SQL keyword."
             return 1
         fi
@@ -74,7 +94,7 @@ function validate_table_name() {
 function create_table(){
 	# Prompt the user to enter the name of the table
 	read -p "Please enter the name of the table you want to create: " table_name
-
+	
 	# Check if the file already exists
 	if [ -f ${table_name^^} ];
 	then 
@@ -82,15 +102,12 @@ function create_table(){
 	# if the table does't exist ---> validate the table name 
 	else 
 		# case(1): if the name entered is valid 
-		if  validate_table_name ${table_name};   then 
-			# if the entered name is valid ---> make a file to store the table's data
-			touch ${table_name^^}
-	
-			# Make a (hidden) file meta_data to store the columns names and its constrains
-			touch .${table_name^^}.metadata
+		if  validate_table_name $table_name
+		then 
 			
+			# if the entered name is valid 
 			# prompt the user for the number of columns
-			read -p "Enter the number of columns : " column_numbers
+			read -p "Enter the number of columns: " column_numbers
 			
 			# make a flag for a table_primary key --> if it's 0 means we haven't choose a PK yet, if it's 1 means we already choosen a PK
 			declare -i pk_flag=0
@@ -123,7 +140,7 @@ function create_table(){
 				fi
 				
 				# Prompt the user to enter the column datatype
-				read -p "Enter column($(($i + 1))) datatype (int/str)" col_datatype
+				read -p "Enter column($(($i + 1))) datatype (int/str): " col_datatype
 				# Check if the user entered a valid data_type
 				if [ ${col_datatype^^} == "INT" -o $col_datatype == "INTGER" ];
 				then 
@@ -185,20 +202,33 @@ function create_table(){
 					column_data="npk"""$column_data   # the final form of the meta_data about column ---> npk:COLUMN_NAME:column_data_type
 				fi
 
-				# Append the column metadata to the table_meta_data file
+				
+				# Append the column metadata to the table_meta_data file (it will be created for the first time when appending the first column_data)
 				echo $column_data >> .${table_name^^}.metadata
 			done
-		else
-			echo "You entered an invalid name"	
+			# make a file to store the table's data
+			touch ${table_name^^}
+			echo "Table ($table_name) created sucssesfuly"
+
 		fi	
 	fi
 }
 
 
-
 #function to rename an existing table in the DB
 function rename_table() {
-	#Prompt the user to enter the current name of table
+	
+	# check if no tables exists in the DB ---> echo "no tables to be renamed in this database" and return to main menu
+	if [ -z "$(ls -A ./)" ]
+	then 
+		echo "There are no tables to rename in this database. You can create table instead!"	
+		return
+	fi
+
+	# preview the tables to the user to choose a table to rename
+	list_tables
+
+	# If there is table/s in the DB ---> Prompt the user to enter the current name of table
 	read -p "Please enter the name of table you want to rename:" table_name
 	if [ -f ${table_name^^} ]
 	then	
@@ -225,27 +255,44 @@ function rename_table() {
 #function to list table names in a database
 function list_tables(){
 	declare -i count=0
+	echo "-----------------------------------"
+	echo "Tables excisting in the database:"
+	echo "-----------------------------------"
     for file in `ls -h | grep -v '^d'`
     do
         echo $file
 		count=$count+1
     done
+	test $count -gt 0 && echo "-----------------------------------"
 	if [[ $count -eq 0 ]];
 	then
-	echo "there is no tables in this database"
+		echo "there is no tables in this database"
+		echo "-----------------------------------"
 	fi
+	
 }
 
 
 #function to add records to a table
 function insert_into(){
-	local table_name=${1^^}
-	echo $table_name
+	# local table_name=${1^^}
+	# echo $table_name
 
-	if [ -f $table_name ]; then
-		if [[ $# > 1 ]];
+	# check if no tables exists in the DB ---> echo "no tables to be renamed in this database" and return to main menu
+	if [ -z "$(ls -A ./)" ]
+	then 
+		echo "There are no tables to rename in this database. You can create table instead!"	
+		return
+	fi
+
+	# if there is table/s in the database prompt the user to enter the table name 
+	read -p "Please enter the name of the Table you want to insert into: " table_name
+	table_name=${table_name^^}
+	if [ -f $table_name ]
+	then
+		if [[ $# > 1 ]]
 		then 
-		echo "you must enter the tabel name only";
+		echo "you must enter the table name only";
 		echo $#
 			return 0
 		fi
@@ -296,16 +343,22 @@ function insert_into(){
       			  fi
   			  fi
 
-  				if [[ ${type[$i]} =~ "int" && ! $dt =~ ^[0-9]+$ ]]; then
-   				     echo "Error: Not a number."
-   				     return 0
-    			elif [[ ${type[$i]} =~ "str" && ! $dt =~ ^[A-Za-z_]+$ ]]; then
-        			echo "Error: String cannot contain numbers or special characters."
-        				return 0
-
+  				if [[ -z $dt ]]
+				then
+					echo "Input is empty. Assigning 'null'."
+					dt="null"
+				elif [[ ${type[$i]} =~ "int" && ! $dt =~ ^[0-9]+$ ]]
+				then
+					echo "Error: Not a number."
+					return 0
+				elif [[ ${type[$i]} =~ "str" && ! $dt =~ ^[A-Za-z_]+$ ]]
+				then
+					echo "Error: String cannot contain numbers or special characters."
+				return 0
+				
 
 		
-    fi
+    	fi
 
     # Append data to the `new_data` variable
     if [[ $i -ne 0 ]]
@@ -326,36 +379,58 @@ function insert_into(){
 #function to update records in a table
 # function update_table(){
 	
-# 	#TO IMPLEMENT ---> Tarek
+
+
+
+
+
+
+
+
 
 
 # }
 
 
-
-
-
 #function to delete the whole table including its structure
-function drop_table() {
-    local table_name=${1^^}
+function drop_table() { 
+    # check if no tables exists in the DB ---> echo "no tables to delete from the database" and return to main menu
+	if [ -z "$(ls -A ./)" ]
+	then 
+		echo "There are no tables to delete from the database"	
+		return
+	fi
 
-    # Check if the file (table) exists
-    if [ -f "$table_name" ]
+	# if there are tables in the DB --> prompt the user to enter the name of table to be deleted
+	read -p "Please enter the name of the Table you want to delete : " table_name
+    
+	# Check if the table exists ---> remove the table file and the metadata file
+    if [ -f "${table_name^^}" ]
     then
         # Use rm -f to avoid errors if the file doesn't exist
-        rm -f "$table_name"
-		rm -f ".${table_name}.metadata"
-        echo "Table '$1' has been deleted."
+        rm -f "${table_name^^}"
+		rm -f ".${table_name^^}.metadata"
+        echo "Table '$table_name' has been deleted."
     else
-        echo "Table '$1' does not exist."
+        echo "Table '$table_name' does not exist."
     fi
 }
 
-
 #function to delete records from a table
 function delete_from_table() {
-    # Convert table name to uppercase
-    table_name=${1^^}
+
+    # check if no tables exists in the DB ---> echo "no tables to delete from the database" and return to main menu
+	if [ -z "$(ls -A ./)" ]
+	then 
+		echo "There are no tables to delete data from in this database"	
+		return
+	fi
+
+	# if there are tables in the DB --> prompt the user to enter the name of table to be deleted
+	read -p "Please enter the name of the Table you want to delete from: " table_name
+	
+	# Convert table name to uppercase to avoid case-senstive problems
+    table_name=${table_name^^}
 
     # Check if the table exists
     if [[ ! -f $table_name ]]; then
@@ -397,7 +472,9 @@ function delete_from_table() {
                 if [[ -n $lines_to_remove ]]; then
                     # Delete matching lines
                     echo "$lines_to_remove" | tac | while read -r line; do
-                        echo "Removing line $line"
+                        # for (( i=$(length($lines_to_remove)); i>0; i--))
+						# do
+						echo "Removing line $line"
                         sed -i "${line}d" "$table_name"
                     done
                     echo "Records deleted successfully."
@@ -438,9 +515,171 @@ function delete_from_table() {
     fi
 }
 
+
+#function to select data from a table 
+function select_from_table() {
+
+	# if no tables exists in the DB ---> echo "no tables exists" and return to main menue
+	if [ -z "$(ls -A ./)" ]
+	then 
+		echo "There are no tables to select from in the database"	
+		return
+	fi
+
+	# prompt the user to enter the name of the table
+	read -p "Please enter the name of the Table you want to select from: " table_name
+
+	# Convert table name to uppercase
+	table_name=${table_name^^}
+
+    # Check if the table exists
+    if [[ ! -f $table_name ]]
+	then
+        echo "This table does not exist."
+        return 1
+    fi
+
+    # Check if the table is empty
+    if [ ! -s $table_name ]
+	then
+        echo "The table is empty."
+        return 1
+    fi
+
+	echo "Please choose an option to select data from table($table_name): "
+	select option in "Display all table data" "Display specific rows according to condition" "Display specific columns"
+	do
+		case $option in 
+			"Display all table data") # select * from students
+				awk -F'|' '{print $0}' "./$table_name"
+				return
+			;;
+
+			"Display specific rows according to condition") # select * from students where name=ahmed
+				read -p "Enter specific column to apply condition on: " columns
+				# we search using awk for the column name entered by the user, which is stored in the second field of the cloumn meta data [ pk:COL_name:COL_datatype ]
+				# then we store the value of column name in (col_name) variable and print the row number of meta data {which is the column number in the data table}
+				valid_column=$(awk -F: -v col_name="${columns^^}" '
+					$2 == col_name { print NR; exit }
+				' ".${table_name}.metadata")
+
+				# get type of column from the metadata file
+				valid_datatype=$(awk -F: -v col_name="${columns^^}" '
+					$2 == col_name { print $3; exit }
+				' ".${table_name}.metadata")
+
+				# prompt the user for the value of data being compared (str/ int)
+				# if the datatype is string 
+				if [ $valid_datatype = "str" ]
+				then
+					# prompt the user to enter the operator
+					read -p "Enter condition operator: equal(=) or not-equal(!=): " operator
+
+					#prompt the user for the value being compared
+					read -p "Enter value of condition: " check_data
+
+					if [ $operator = "=" ]
+					then
+						awk -F'|' -v valid_column="$valid_column" -v value="$check_data" '
+						$valid_column == value { print $0 }
+						' "$table_name"
+
+					elif [ $operator = "!=" ]
+					then 
+						awk -F'|' -v valid_column="$valid_column" -v value="$check_data" '
+						$valid_column != value { print $0 }
+						' "$table_name"
+					else 
+						echo "Invalid input. Please try again."
+					fi
+
+					# if the column datatype is intger
+					elif [ $valid_datatype = "int" ]
+					then 
+						# prompt the user to enter the operator
+						read -p "Enter operator:( = / > / < / >= / <= / not equal(!=): " operator
+						#prompt the user for the INTEGER value being compared
+						declare -i check_data
+						read -p "Enter value of condition: " check_data
+						# switch case to perform the selection based on operator entered by user
+						case $operator in
+						"=")
+							awk -F'|' -v valid_column="$valid_column" -v value="$check_data" '
+							$valid_column == value { print $0 }
+							' "$table_name"
+							;;
+						
+						">")
+							awk -F'|' -v valid_column="$valid_column" -v value="$check_data" '
+							$valid_column > value { print $0 }
+							' "$table_name"
+							;;
+						
+						"<")
+							awk -F'|' -v valid_column="$valid_column" -v value="$check_data" '
+							$valid_column < value { print $0 }
+							' "$table_name"
+							;;
+						
+						">=")
+							awk -F'|' -v valid_column="$valid_column" -v value="$check_data" '
+							$valid_column >= value { print $0 }
+							' "$table_name"
+							;;
+						
+						"<=")
+							awk -F'|' -v valid_column="$valid_column" -v value="$check_data" '
+							$valid_column <= value { print $0 }
+							' "$table_name"
+							;;
+						
+						"!=")
+							awk -F'|' -v valid_column="$valid_column" -v value="$check_data" '
+							$valid_column != value { print $0 }
+							' "$table_name"
+							;;	
+						*)
+							echo "Invalid input. Please try again."
+							;;
+						esac
+					fi
+			;;
+
+			"Display specific column")
+			read -p "Enter column to display: " column_name
+			column_name=${column_name^^} 
+			
+			# Check if the column exists in the metadata
+			column_index=$(awk -F: -v col_name="$column_name" '
+				$2 == col_name { print NR; exit }
+			' ".${table_name}.metadata")
+
+			if [[ -z "$column_index" ]] 
+			then
+				echo "The column '$column_name' does not exist in the table."
+				return
+			fi
+
+			# Display the column name and its values
+			echo "Displaying column: $column_name"
+			awk -F'|' -v col_idx="$column_index" '
+			BEGIN { print "----- " ENVIRON["column_name"] " -----" }
+			{ print $col_idx }
+			' "$table_name"
+			;;
+		
+			*)
+				 echo "Invalid input. Please try again."
+			;;
+		esac
+	done
+}
+
+echo "Please choose an option: "
 # Menu to chosse a command from
-select option in "Create Table"  "List all Tables" "Delete Table" "Insert Into Table" "Select from Table " "Delete from Table" "Update Table" "Exit"
+select option in "Create Table" "Rename table" "List all Tables" "Delete Table" "Insert Into Table" "Select from Table " "Delete from Table" "Update Table" "Exit"
 do
+	
 	case $option in 
 		"Create Table")
 			create_table
@@ -451,52 +690,50 @@ do
 			;;
 			
 		"Delete Table")	
-			read -p "Please enter the name of the Table you want to delet : " table_name
-			drop_table $table_name
+			drop_table
 			;;
 			
 		"Insert Into Table")
-			read -p "Please enter the name of the Table you want to insert into: " table_name
-			insert_into $table_name
+			insert_into
 			;;
 			
-		# "Select from Table ")
-		# 	read -p "Please enter the name of the Table you want to select from: " table_name
-		# 	select_from_table $table_name
-		# 	;;
+		"Select from Table ")
+			select_from_table 
+			;;
 		
 		"Delete from Table")
-			read -p "Please enter the name of the Table you want to delete from: " table_name
-			delete_from_table $table_name
+			delete_from_table
 			;;
-			
+
+		"Rename table")
+			rename_table
+			;;
+
 # 		"Update Table")
 # 			read -p "Please enter the name of the Table you want to update: " table_name
 # 			update_table $table_name
 # 			;;
-		
+
 		"Exit")
-			while true
-			do
-				read -p "Do you want to exit? (yes/no): " confirm_exit
-				if [  ${confirm_exit^^} = "Y" -o ${confirm_exit^^} = "YES" ]
-				then
-					echo "You exited the database"
-					# if the user choose to exit then return to the DMBS directory and run the main.sh scipt to start from the begining
-					cd ..
-					. ./main.sh
-					break
-		
-				elif [ ${confirm_exit^^} = "N" -o ${confirm_exit^^} = "NO" ]
-				then
-					echo "You are still in the database. Choose an option."
-				else
-					echo "Invalid input."
-				fi
-			done
-		  ;;
+			read -p "Do you want to exit? (yes/no): " confirm_exit
+			if [  ${confirm_exit^^} = "Y" -o ${confirm_exit^^} = "YES" ]
+			then
+				echo "You exited the database"
+				# if the user choose to exit then return to the DMBS directory and run the main.sh scipt to start from the begining
+				cd ..
+				. ./main.sh
+				break
+	
+			elif [ ${confirm_exit^^} = "N" -o ${confirm_exit^^} = "NO" ]
+			then
+				echo "You are still in the database. Choose an option."
+			else
+				echo "Invalid input."
+			fi
+		;;
 	
 		*)
 			echo "Invalid input. Please try again."
+		;;
 	esac
-		done  
+done  
