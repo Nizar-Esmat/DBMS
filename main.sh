@@ -2,73 +2,105 @@
 
 #function to validate the input 
 function validate_DB_name() {
-    local name=$1
+  
+  local DB_name=$1
 	
 	# if the user entered a name that exceedes the maximum allowed characters
-	test ${#name} -gt 64 && echo 'Databse name exceed maximum allowed length.'; echo 'Please enter a name less than 64 charcters.'
-
+  if [ ${#DB_name} -gt 64 ]
+  then 
+    echo 'Databse name exceed maximum allowed length.'
+    echo 'Please enter a name less than 64 charcters.'
+    return 0
+  fi
 
 	# if the user entered an empty string 
-	test -z $name && echo "Empty value. Database name must be at least one character."
+  if [ -z $DB_name ]
+	then
+    echo "Empty value. Database name must be at least one character."
+    return 0
+  fi
 
 	# if the user entered a space in the name
-	if [[ $name =~ [[:space:]] ]]
+	if [[ $DB_name =~ [[:space:]] ]]
 	then
   		echo "Database name can not contain spaces."
+      return 0
 	fi
 
 	# if the user entered a name which starts with a number 
-	if [[ $name =~ ^[0-9] ]]; then
+	if [ $DB_name =~ ^[0-9] ]
+  then
         echo "Invalid name: Cannot start with a number."
         return 0
-    fi
+  fi
 	
 	# if the user entered an unallowed charcter: ! @ # $ % ^ & * [ ] ( ) .
-	if [[ $name =~ [^A-Za-z0-9_] ]]; then
+	if [ $DB_name =~ [^A-Za-z0-9_] ]
+  then
         echo "Invalid name: Cannot contain special characters."
         return 0
-    fi
+  fi
 
 	# if the user entered a name which starts with underscore _
-	if [[ $name = ^_ ]]
+	if [ $DB_name = ^_ ]
 	then
   		echo "Invalid name: Cannot start with an underscore."
+      return 0
 	fi
 
-	# if the user entered a reserved key word in the SQL language e.g: SELECT INSERT HAVING NOTE (upper-case or lower-case)
-		# ABSOLUTE, ACTION, ADD, ALL, ALTER, ANALYZE, AND, AS, ASC, ASSERTION, AT, AUTHORIZATION, BACKUP, BEGIN, BETWEEN, BY, CASE, CAST, 
-		# CHECK, COLLATE, COLUMN, COMMIT, COMPUTE, CONNECT, CONSTRAINT, CONTAINMENT, CONTINUE, CORRESPONDING, CREATE, CROSS, CUBE, CURRENT, 
-		# CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP, CURRENT_USER, DATABASE, DATE, DAY, DEALLOCATE, DECLARE, DEFAULT, DEFER, DELETE, DESC, 
-		# DESCRIBE, DIAGNOSTICS, DISCONNECT, DISTINCT, DO, DOMAIN, DROP, DYNAMIC, ELSE, END, ESCAPE, EXCEPT, EXECUTE, EXISTS, EXPLAIN, EXTEND, 
-		# FALSE, FETCH, FILTER, FIRST, FLOAT, FOR, FOREIGN, FROM, FULL, FUNCTION, GENERAL, GLOBAL, GRANT, GROUP, HAVING, HOLD, IDENTITY, IF, 
-		# IMMEDIATE, IN, INDICATOR, INHERIT, INOUT, INSENSITIVE, INSERT, INTERSECT, INTERVAL, INTO, IS, ISOLATION, JOIN, KEY, LANGUAGE, LATERAL, 
-		# LEADING, LEFT, LIKE, LIMIT, LOCAL, MATCH, MAXVALUE, MEMBER, MERGE, MINVALUE, MODIFY, MODULE, MONTH, NATURAL, NO, NOT, NULL, NUMERIC, OF, 
-		# OFF, OLD, ON, ONLY, OPEN, OPERATOR, OPTION, OR, ORDER, OUT, OUTER, OVER, PARAMETER, PARTITION, PASCAL, PLACING, PRECISION, PREPARE, PRIMARY, 
-		# PRINT, PROCEDURE, PUBLIC, READ, REAL, REASSIGN, RECHECK, RECOMPILE, REF, REFERENCES, REGRANT, RELATIVE, RELEASE, RENAME, REPEAT, REPLACE, 
-		# REQUIRE, RESPECT, RESTRICT, RETURN, REVOKE, RIGHT, ROLE, ROW, ROWS, SAVEPOINT, SCHEMA, SECOND, SECTION, SELECT, SENSITIVE, SEQUENCE, 
-		# SERIALIZABLE, SESSION, SET, SIZE, SMALLINT, SOME, SPECIFIC, SQL, SQLCODE, SQLERROR, SQLSTATE, START, STATIC, STATISTICS, SUBCLASS, 
-		# SUBPARTITION, SUM, SYNONYM, SYSTEM, TABLE, TABLESAMPLE, TEMP, TEMPORARY, THAN, THEN, TIME, TIMESTAMP, TO, TRIGGER, TRUE, TRUNCATE, TYPED, 
-		# UNION, UNIQUE, UNLISTEN, UNPIVOT, UPDATE, USAGE, USER, USING, VALUE, VALUES, VARCHAR, VIEW, WHEN, WHERE, WITH, WORK, WRITE, XML
+	# if the user entered a reserved key word in the SQL language
+  # declaring an array to store the reserved keywords in the SQL 
+  reserved_keywords=(
+    ABSOLUTE ACTION ADD ALL ALTER ANALYZE AND AS ASC ASSERTION AT AUTHORIZATION BACKUP BEGIN BETWEEN BY CASE CAST
+    CHECK COLLATE COLUMN COMMIT COMPUTE CONNECT CONSTRAINT CONTAINMENT CONTINUE CORRESPONDING CREATE CROSS CUBE CURRENT
+    CURRENT_DATE CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER DATABASE DATE DAY DEALLOCATE DECLARE DEFAULT DEFER DELETE DESC
+    DESCRIBE DIAGNOSTICS DISCONNECT DISTINCT DO DOMAIN DROP DYNAMIC ELSE END ESCAPE EXCEPT EXECUTE EXISTS EXPLAIN EXTEND
+    FALSE FETCH FILTER FIRST FLOAT FOR FOREIGN FROM FULL FUNCTION GENERAL GLOBAL GRANT GROUP HAVING HOLD IDENTITY IF
+    IMMEDIATE IN INDICATOR INHERIT INOUT INSENSITIVE INSERT INTERSECT INTERVAL INTO IS ISOLATION JOIN KEY LANGUAGE LATERAL
+    LEADING LEFT LIKE LIMIT LOCAL MATCH MAXVALUE MEMBER MERGE MINVALUE MODIFY MODULE MONTH NATURAL NO NOT NULL NUMERIC OF
+    OFF OLD ON ONLY OPEN OPERATOR OPTION OR ORDER OUT OUTER OVER PARAMETER PARTITION PASCAL PLACING PRECISION PREPARE PRIMARY
+    PRINT PROCEDURE PUBLIC READ REAL REASSIGN RECHECK RECOMPILE REF REFERENCES REGRANT RELATIVE RELEASE RENAME REPEAT REPLACE
+    REQUIRE RESPECT RESTRICT RETURN REVOKE RIGHT ROLE ROW ROWS SAVEPOINT SCHEMA SECOND SECTION SELECT SENSITIVE SEQUENCE
+    SERIALIZABLE SESSION SET SIZE SMALLINT SOME SPECIFIC SQL SQLCODE SQLERROR SQLSTATE START STATIC STATISTICS SUBCLASS
+    SUBPARTITION SUM SYNONYM SYSTEM TABLE TABLESAMPLE TEMP TEMPORARY THAN THEN TIME TIMESTAMP TO TRIGGER TRUE TRUNCATE TYPED
+    UNION UNIQUE UNLISTEN UNPIVOT UPDATE USAGE USER USING VALUE VALUES VARCHAR VIEW WHEN WHERE WITH WORK WRITE XML)
+  
+  # Initialize a flag to check if the element is found
+  declare -i found_flag=0
 
-    
+  # Iterate over the array
+  for keyword in "${reserved_keywords[@]}"
+  do
+      if [ "$keyword" == "$DB_name^^" ]
+      then
+          found_flag=1
+          break
+      fi
+  done
 
-    return 1 
+  # Check the flag if it equal to 1 ---> print error 
+  if [ $found_flag -eq 1 ]
+  then
+      echo "Database name cannot be an SQL keyword."
+      return 0
+  fi
+
+return 1 
 }
 
 #function to create data base
-clear
+
 function create_DB(){
     read -p "Enter the name of the database: " DB_name
-	# check if there is an existing DB with the same name
-	if [ -d "${DB_name^^}" ]
-	then 
-		echo "This database already exists."
-            
+    # check if there is an existing DB with the same name
+    if [ -d "${DB_name^^}" ]
+    then 
+      echo "This database already exists."
     else
-		if [ validate_DB_name() $DB_name ]
-		then 
-			mkdir ${DB_name^^}
-			echo "Database ($DB_name)created."
+        if [ validate_DB_name() $DB_name ]
+        then 
+          mkdir ${DB_name^^}
+          echo "Database ($DB_name)created."
         fi
     fi
 }		
@@ -81,7 +113,6 @@ function rename_DB(){
 	# todo --> make the name (case-insenstive)
 	if [ -d ${DB_name^^} ]
 	then	
-	#declare -i flag=0
 	while true
 	do
 		read -p "Please enter the new name: " DB_new_name 
@@ -158,6 +189,7 @@ function drop_DB(){
 function connect_to_DB(){
 	#first, prompt the user to enter the database name (directory)
 	read -p "Please enter DB name you want to connect" DB_name
+
 	
 	# Validate that the database name exists in the DBMS
 	if [ -d  ${DB_name^^} ]
@@ -171,7 +203,7 @@ function connect_to_DB(){
 	else 
 		echo "No Database with name ($DB_name) existing"
 		return 1
-	fi
+  fi
 }
 
 
