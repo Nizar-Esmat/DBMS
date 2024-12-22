@@ -576,11 +576,8 @@ function drop_table() {
         rm -f "$table_name"
 		rm -f ".${table_name}.metadata"
         echo "Table '$1' has been deleted."
-
-
-
-# }
-
+	fi
+}
 
 #function to delete the whole table including its structure
 function drop_table() { 
@@ -844,63 +841,62 @@ function select_from_table() {
 
 echo "Please choose an option: "
 # Menu to chosse a command from
-select option in "Create Table" "Rename table" "List all Tables" "Delete Table" "Insert Into Table" "Select from Table " "Delete from Table" "Update Table" "Exit"
-do
-	
-	case $option in 
-		"Create Table")
-			create_table
-			;;
-			
-		"List all Tables")
-			list_tables
-			;;
-			
-		"Delete Table")	
-			drop_table
-			;;
-			
-		"Insert Into Table")
-			insert_into
-			;;
-			
-		"Select from Table ")
-			select_from_table 
-			;;
-		
-		"Delete from Table")
-			delete_from_table
-			;;
-			
-		"Update Table")
-			read -p "Please enter the name of the Table you want to update: " table_name
-			update_table $table_name
-			;;
-	
-		"Rename table")
-			rename_table
-			;;
-
-
-		"Exit")
-			read -p "Do you want to exit? (yes/no): " confirm_exit
-			if [  ${confirm_exit^^} = "Y" -o ${confirm_exit^^} = "YES" ]
-			then
-				echo "You exited the database"
-				# if the user choose to exit then return to the DMBS directory and run the main.sh scipt to start from the begining
-				cd ..
-				. ./main.sh
-				break
-	
-			elif [ ${confirm_exit^^} = "N" -o ${confirm_exit^^} = "NO" ]
-			then
-				echo "You are still in the database. Choose an option."
-			else
-				echo "Invalid input."
-			fi
-		;;
-	
-		*)
-			echo "Invalid input. Please try again."
-		;;
-	esac
+select option in "Create Table" "Rename Table" "List all Tables" "Delete Table" "Insert Into Table" "Select from Table" "Delete from Table" "Update Table" "Exit"; do
+    case $option in
+        "Create Table")
+            create_table
+            ;;
+            
+        "List all Tables")
+            list_tables
+            ;;
+            
+        "Delete Table")    
+            drop_table
+            ;;
+            
+        "Insert Into Table")
+            insert_into
+            ;;
+            
+        "Select from Table")
+            select_from_table
+            ;;
+        
+        "Delete from Table")
+            delete_from_table
+            ;;
+            
+        "Update Table")
+            read -p "Please enter the name of the Table you want to update: " table_name
+            update_table "$table_name"  # Quoting to handle spaces
+            ;;
+    
+        "Rename Table")
+            rename_table
+            ;;
+    
+        "Exit")
+            read -p "Do you want to exit? (yes/no): " confirm_exit
+            case ${confirm_exit^^} in
+                Y|YES)
+                    echo "You exited the database."
+                    # Return to the DMBS directory and restart main.sh
+                    cd ..
+                    . ./main.sh
+                    break
+                    ;;
+                N|NO)
+                    echo "You are still in the database. Choose an option."
+                    ;;
+                *)
+                    echo "Invalid input. Please respond with yes or no."
+                    ;;
+            esac
+            ;;
+        
+        *)
+            echo "Invalid input. Please try again."
+            ;;
+    esac
+done
