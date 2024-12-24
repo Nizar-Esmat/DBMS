@@ -89,7 +89,6 @@ function validate_DB_name() {
     return 0
 }
 
-
 #function to create data base
 function create_DB(){
 
@@ -111,7 +110,6 @@ function create_DB(){
         fi
     fi
 }
-
 
 #function to rename an existing Database
 function rename_DB(){
@@ -136,6 +134,7 @@ function rename_DB(){
             # validate the entered name --> if valid rename the DB and break from the while loop 
             if  validate_DB_name ${DB_new_name^^}
             then 
+                echo "dataBase name changed to $DB_new_name "
                 mv ${DB_name^^} ${DB_new_name^^}
                 return
             else
@@ -153,7 +152,6 @@ function rename_DB(){
     fi
 }
 
-
 function list_DB() {
     # Check if there are databases(directories) by listing only directories and redirecting errors to /dev/null
     if [ "$(ls -d */ 2>/dev/null)" ]
@@ -170,7 +168,6 @@ function list_DB() {
         echo "No databases found."
     fi
 }
-
 
 function drop_DB() {
     # check if no Databases exists in the DBMS ---> echo "No databases exist in the DBMS. You have to create a DB first." and return to main menu
@@ -224,7 +221,6 @@ function drop_DB() {
     fi
 }
 
-
 # This function connects the user to a Database in the DBMS
 function connect_to_DB(){
 
@@ -256,45 +252,42 @@ function connect_to_DB(){
   fi
 }
 
-
-
-
 echo "Please choose an option."
 select option in "Create Database" "Rename Database" "List Databases" "Delete Database" "Connect to Database" "Exit"
-do
-    case $option in
-        "Create Database")
-            create_DB
-            ;;
-        "Rename Database")
-            rename_DB
-            ;;
-        "List Databases")
-            list_DB
-            ;;
-        "Delete Database")
-            drop_DB
-            ;;
-        "Connect to Database")
-            connect_to_DB
-            ;;
-            
-        "Exit")
-            read -p "Do you want to exit? (yes/no): " exit
-            if [[ ${exit^^} == "YES" || ${exit^^} == "Y" ]]
-            then
-                echo "You exited the system."
-                break
-            elif [[ ${exit^^} == "NO" || ${exit^^} == "N" ]]
-            then
-                echo "You are still in the system. Choose an option."
-                continue
-            else
-                echo "Invalid input."
-            fi
-            ;;
-        *)
-            echo "Invalid input. Please try again."
-            ;;
-    esac
-done
+    do
+        case $option in
+            "Create Database")
+                create_DB
+                ;;
+            "Rename Database")
+                rename_DB
+                ;;
+            "List Databases")
+                list_DB
+                ;;
+            "Delete Database")
+                drop_DB
+                ;;
+            "Connect to Database")
+                connect_to_DB
+                ;;
+                
+            "Exit")
+                read -p "Do you want to exit? (yes/no): " exit
+                if [[ ${exit^^} == "YES" || ${exit^^} == "Y" ]]
+                then
+                    echo "You exited the system."
+                    break
+                elif [[ ${exit^^} == "NO" || ${exit^^} == "N" ]]
+                then
+                    echo "You are still in the system. Choose an option."
+                    continue
+                else
+                    echo "Invalid input."
+                fi
+                ;;
+            *)
+                echo "Invalid input. Please try again."
+                ;;
+        esac
+    done
