@@ -493,14 +493,14 @@ function update_table(){
 
 				IFS=$'\n' read -rd '' -a lines_array <<< "$lines_to_change"
 
-				for line in "${lines_array[@]}"
-				do
-					awk -F'|' -v col="$valid_column_to_change" -v new_val="$data_to_change" '{
-						OFS="|";         
-						$col = new_val;  
-						print $0; 
-					}' "$table_name" > temp_file && mv temp_file "$table_name"
+				for line in "${lines_array[@]}"; do
+					awk -F'|' -v col="$valid_column_to_change" -v new_val="$data_to_change" -v line_to_change="$line" 'NR == line_to_change {
+						OFS = "|";
+						$col = new_val;
+					} 
+					{ print $0; }' "$table_name" > temp_file && mv temp_file "$table_name"
 				done
+
 			fi
 		fi
 
@@ -551,10 +551,11 @@ function update_table(){
 
 	
 	awk -F'|' -v col="$valid_column_index" -v new_val="$data_to_change" '{
+		OFS="|";   
 		$col = new_val; 
-		OFS="|";        
 		print $0;       
-	}' "$table_name" > "$table_name" && mv temp_file "$table_name"
+	}' "$table_name" > temp_file && mv temp_file "$table_name"
+	 
 
 
 	else
