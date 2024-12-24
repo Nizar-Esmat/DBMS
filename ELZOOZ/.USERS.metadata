@@ -1,0 +1,3 @@
+pk:ID:int
+npk:EMAIL:str
+npk:PASSWORD:str

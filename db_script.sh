@@ -279,7 +279,7 @@ function insert_into(){
 	# echo $table_name
 
 	# check if no tables exists in the DB ---> echo "no tables to be renamed in this database" and return to main menu
-	if [ -z "$(ls -A ./)" ]
+	if [ -z "$(ls ./)" ]
 	then 
 		echo "There are no tables to rename in this database. You can create table instead!"	
 		return
@@ -287,7 +287,7 @@ function insert_into(){
 
 	# if there is table/s in the database prompt the user to enter the table name 
 	read -p "Please enter the name of the Table you want to insert into: " table_name
-	table_name=${table_name^^}
+table_name=${table_name^^}
 	if [ -f $table_name ]
 	then
 		if [[ $# > 1 ]]
