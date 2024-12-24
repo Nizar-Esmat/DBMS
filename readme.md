@@ -78,12 +78,6 @@ This project is a **Database Management System (DBMS)** implemented entirely usi
 - File handling and input validation.
 - Implementation of basic database functionalities.
 
-## Future Improvements
-
-- Add support for more complex queries (e.g., joins and aggregations).
-- Implement user authentication and access control.
-- Provide a better user interface with clearer feedback and help messages.
-
 ## Acknowledgments
 
 This project was completed as part of my coursework at the **Information Technology Institute (ITI)** during the **Bash course**. Special thanks to my instructors and peers for their guidance and support.
